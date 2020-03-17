@@ -6,11 +6,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Horizon.SmartHome.Circuits
 {
-    public partial class FluentHomematicSwitchEventManager : FluentEventManager, IFluentHomematicSwitchEvent, IFluentHomematicChannelEventState, IFluentHomematicEventState
+    public partial class FluentHomematicSwitchEventManager : 
+        FluentEventManager, 
+        IFluentHomematicSwitchEvent, 
+        IFluentHomematicChannelEventState,
+        IFluentHomematicEventState,
+        IStateEntity,
+        IStateAction
     {
         private int? _channelFilter;
 
         private KeyPressType? _keyPressTypeFilter;
+
+        private IEntity? _currentEntities;
+        
+        private IAction? _currentAction;
 
         private readonly string _deviceIdFilter;
         
@@ -20,6 +30,13 @@ namespace Horizon.SmartHome.Circuits
         {
             _daemon = daemon;
             _deviceIdFilter = deviceId;
+        }
+
+        public IStateEntity UseEntities(params string[] entityId)
+        {
+            _currentEntities = _daemon.Entity(entityId);
+            
+            return this;
         }
 
         public IExecute Call(Func<Task> callback)
@@ -83,6 +100,55 @@ namespace Horizon.SmartHome.Circuits
             {
                 _daemon.Logger?.Log(LogLevel.Warning, e, "Ignored homematic keypress event due to invalid event data.");
             }
+        }
+
+        public IStateAction TurnOff()
+        {
+            _currentAction = _currentEntities?.TurnOff();
+
+            return this;
+        }
+
+        public IStateAction TurnOn()
+        {
+            _currentAction = _currentEntities?.TurnOn();
+
+            return this;
+        }
+
+        public IStateAction Toggle()
+        {
+            _currentAction = _currentEntities?.Toggle();
+
+            return this;
+        }
+
+        public IStateAction SetState(dynamic state)
+        {
+            _currentAction = _currentEntities?.SetState(state);
+
+            return this;
+        }
+
+        public IStateAction WithAttribute(string name, object value)
+        {
+            _currentAction?.WithAttribute(name, value);
+
+            return this;
+        }
+
+        void IExecute.Execute()
+        {
+            if (_currentAction != null)
+            {
+                // As the current action is managed by the Entity Manager,
+                // we use the proper instance to persist the action. 
+                var entityManager = _currentAction as EntityManager;
+
+                Call(async () => await entityManager!.ExecuteAsync(true));
+            }
+
+            Execute();
         }
     }
 }
