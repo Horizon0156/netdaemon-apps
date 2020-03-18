@@ -18,7 +18,7 @@ namespace Horizon.SmartHome.Automations
                 "23:00:00", 
                 async () => await Entity("light.moppi_licht").TurnOff().ExecuteAsync());
 
-            return Task.CompletedTask;
+            return base.InitializeAsync();
         }
     }
 }

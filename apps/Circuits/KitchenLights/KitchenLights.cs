@@ -30,7 +30,7 @@ namespace Horizon.SmartHome.Circuits
                 .TurnOff()
                 .Execute();
 
-            return Task.CompletedTask;
+            return base.InitializeAsync();
         }
     }
 }

@@ -1,0 +1,2 @@
+CeilingLight:
+  class: Horizon.SmartHome.Automations.CeilingLight
