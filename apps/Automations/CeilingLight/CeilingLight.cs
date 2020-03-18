@@ -2,7 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JoySoftware.HomeAssistant.NetDaemon.Common;
 
-namespace Horizon.SmartHome.Automations.CeilingLight
+namespace Horizon.SmartHome.Automations
 {
     public class CeilingLight : NetDaemonApp
     {
