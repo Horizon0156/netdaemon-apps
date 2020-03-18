@@ -4,7 +4,7 @@ using JoySoftware.HomeAssistant.NetDaemon.Common;
 using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Extensions.Logging;
 
-namespace Horizon.SmartHome.Circuits
+namespace Horizon.SmartHome.Common.Homematic
 {
     public partial class FluentHomematicSwitchEventManager : 
         FluentEventManager, 

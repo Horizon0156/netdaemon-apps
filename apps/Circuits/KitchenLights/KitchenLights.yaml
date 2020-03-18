@@ -1,0 +1,2 @@
+KitchenLights:
+  class: Horizon.SmartHome.Circuits.KitchenLights

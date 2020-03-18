@@ -2,7 +2,7 @@
 using Horizon.SmartHome.Circuits;
 using JoySoftware.HomeAssistant.NetDaemon.Common;
 
-namespace Horizon.SmartHome.Common
+namespace Horizon.SmartHome.Common.Homematic
 {
     public class HomematicNetDaemonApp : NetDaemonApp
     {

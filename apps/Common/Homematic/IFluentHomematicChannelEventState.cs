@@ -1,4 +1,4 @@
-namespace Horizon.SmartHome.Circuits
+namespace Horizon.SmartHome.Common.Homematic
 {
     public interface IFluentHomematicChannelEventState
     {

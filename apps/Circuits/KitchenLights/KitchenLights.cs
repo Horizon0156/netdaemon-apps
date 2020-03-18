@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
-using Horizon.SmartHome.Common;
+using Horizon.SmartHome.Common.Homematic;
 
 namespace Horizon.SmartHome.Circuits
 {
-    public class LightCircuits : HomematicNetDaemonApp
+    public class KitchenLights : HomematicNetDaemonApp
     {
         public override Task InitializeAsync()
         {

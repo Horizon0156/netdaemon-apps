@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using JoySoftware.HomeAssistant.NetDaemon.Common;
 
-namespace Horizon.SmartHome.Circuits
+namespace Horizon.SmartHome.Common.Homematic
 {
     public interface IFluentHomematicEventState 
     {
