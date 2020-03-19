@@ -45,8 +45,13 @@ namespace Horizon.SmartHome.Automations
             var ceilingLightState = 
                 State.FirstOrDefault(e => e.EntityId == "light.retro_licht")?.State as string;
 
-            if (ambientLightState == "on" || ceilingLightState == "on") 
+            var illumination = 
+                (double) State.FirstOrDefault(e => e.EntityId == "sensor.hmip_smi_000915699a421a_illumination")?.State;
+            
+
+            if (ambientLightState == "on" || ceilingLightState == "on" || illumination > 15) 
             {
+                Log($"Skipped, because {illumination} > 15");
                 return;
             }
 
