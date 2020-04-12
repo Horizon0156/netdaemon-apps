@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Horizon.SmartHome.Common.Homematic;
+using JoySoftware.HomeAssistant.NetDaemon.Common;
 
 namespace Horizon.SmartHome.Circuits
 {

@@ -6,8 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Horizon.SmartHome.Common.Homematic
 {
-    public partial class FluentHomematicSwitchEventManager : 
-        FluentEventManager, 
+    public partial class FluentHomematicSwitchEventManager :
         IFluentHomematicSwitchEvent, 
         IFluentHomematicChannelEventState,
         IFluentHomematicEventState,
@@ -23,25 +22,32 @@ namespace Horizon.SmartHome.Common.Homematic
         private IAction? _currentAction;
 
         private readonly string _deviceIdFilter;
-        
-        private readonly INetDaemon _daemon;
 
-        public FluentHomematicSwitchEventManager(string deviceId, INetDaemon daemon) : base(new[] { "homematic.keypress" }, daemon)
+        private readonly INetDaemonApp _daemonApp;
+
+        private readonly ILogger? _logger;
+
+        public FluentHomematicSwitchEventManager(
+            string deviceId,
+            INetDaemonApp daemonApp,
+            ILogger? logger)
         {
-            _daemon = daemon;
+            _daemonApp = daemonApp;
+            _logger = logger;
             _deviceIdFilter = deviceId;
         }
 
         public IStateEntity UseEntities(params string[] entityId)
         {
-            _currentEntities = _daemon.Entity(entityId);
+            _currentEntities = _daemonApp.Entity(entityId);
             
             return this;
         }
 
         public IExecute Call(Func<Task> callback)
         {
-            return base.Call((eventType, eventData) => ProcessHomematicKeypressEvent(eventData, callback));
+            return _daemonApp.Event("homematic.keypress")
+                             .Call((eventType, eventData) => ProcessHomematicKeypressEvent(eventData, callback));
         }
 
         public IFluentHomematicEventState PressedLong()
@@ -70,36 +76,6 @@ namespace Horizon.SmartHome.Common.Homematic
             _channelFilter = 2;
 
             return this;
-        }
-
-
-        private async Task ProcessHomematicKeypressEvent(dynamic? eventData, Func<Task> callback)
-        {
-            if (eventData == null)
-            {
-                _daemon.Logger?.Log(LogLevel.Warning, "Ignored homematic keypress event due to mising event data.");
-                return;
-            }
-
-            try
-            {
-                var deviceId = eventData.name;
-                var channel = (int)eventData.channel;
-                var keyPressType = Enum.Parse(typeof(KeyPressType), eventData.param);
-
-                if (deviceId == _deviceIdFilter && channel == _channelFilter && keyPressType == _keyPressTypeFilter)
-                {
-                    await callback.Invoke();
-                }
-            }
-            catch (RuntimeBinderException e)
-            {
-                _daemon.Logger?.Log(LogLevel.Warning, e, "Ignored homematic keypress event due to invalid event data.");
-            }
-            catch (ArgumentException e)
-            {
-                _daemon.Logger?.Log(LogLevel.Warning, e, "Ignored homematic keypress event due to invalid event data.");
-            }
         }
 
         public IStateAction TurnOff()
@@ -139,16 +115,47 @@ namespace Horizon.SmartHome.Common.Homematic
 
         void IExecute.Execute()
         {
+            Call(ExecuteConfiguredAction).Execute();
+        }
+
+        private async Task ExecuteConfiguredAction()
+        {
             if (_currentAction != null)
             {
                 // As the current action is managed by the Entity Manager,
                 // we use the proper instance to persist the action. 
                 var entityManager = _currentAction as EntityManager;
+                await entityManager!.ExecuteAsync(true);
+            }
+        }
 
-                Call(async () => await entityManager!.ExecuteAsync(true));
+        private async Task ProcessHomematicKeypressEvent(dynamic? eventData, Func<Task> callback)
+        {
+            if (eventData == null)
+            {
+                _logger?.Log(LogLevel.Warning, "Ignored homematic keypress event due to mising event data.");
+                return;
             }
 
-            Execute();
+            try
+            {
+                var deviceId = eventData.name;
+                var channel = (int)eventData.channel;
+                var keyPressType = Enum.Parse(typeof(KeyPressType), eventData.param);
+
+                if (deviceId == _deviceIdFilter && channel == _channelFilter && keyPressType == _keyPressTypeFilter)
+                {
+                    await callback.Invoke();
+                }
+            }
+            catch (RuntimeBinderException e)
+            {
+                _logger?.LogWarning(e, $"  {{Id}}: Ignored homematic keypress event due to invalid event data.");
+            }
+            catch (ArgumentException e)
+            {
+                _logger?.LogWarning(e, $"  {{Id}}: Ignored homematic keypress event due to invalid event data.");
+            }
         }
     }
 }
