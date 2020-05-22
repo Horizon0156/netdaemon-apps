@@ -1,64 +1,57 @@
-using System.Linq;
+using System;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
-using JoySoftware.HomeAssistant.NetDaemon.Common;
+using JoySoftware.HomeAssistant.NetDaemon.Common.Reactive;
 
 namespace Horizon.SmartHome.Automations
 {
-    public class CeilingLight : NetDaemonApp
+    public class CeilingLight : NetDaemonRxApp
     {
         private bool _lightEnabledByAutomation;
 
         public override Task InitializeAsync()
         {
-            Entity("binary_sensor.hmip_smi_000915699a421a_motion")
-                .WhenStateChange(from: "off", to: "on")
-                .Call(async (_, __, ___) => await EnableCeilingLightWhenAmbientLightIsNotEnabled())
-                .Execute();
+            Entity("binary_sensor.000915699a421a_motion")
+                .StateChanges
+                .Where(c => c.New.State == "on")
+                .Subscribe(_ => EnableCeilingLightWhenAmbientLightIsNotEnabled());
 
-            Entity("binary_sensor.hmip_smi_000915699a421a_motion")
-                .WhenStateChange(from: "on", to: "off")
-                .Call(async (_, __, ___) => await DisableCelingLightIfRequired())
-                .Execute();
+            Entity("binary_sensor.000915699a421a_motion")
+                .StateChanges
+                .Where(c => c.New.State == "off")
+                .Subscribe(_ => DisableCelingLightIfRequired());
 
             return base.InitializeAsync();
         }
 
-        private async Task DisableCelingLightIfRequired()
+        private void DisableCelingLightIfRequired()
         {
             if (!_lightEnabledByAutomation) 
             {
                 return;
             }
 
-            await Entity("light.retro_licht")
-                    .TurnOff()
-                    .ExecuteAsync();
+            Entity("light.retro_licht").TurnOff();
             
             _lightEnabledByAutomation = false;
         }
 
-        private async Task EnableCeilingLightWhenAmbientLightIsNotEnabled()
+        private void EnableCeilingLightWhenAmbientLightIsNotEnabled()
         {
-            var ambientLightState = 
-                State.FirstOrDefault(e => e.EntityId == "light.blumentopf")?.State as string;
+            var ambientLightState = State("light.blumentopf")?.State as string;
 
-            var ceilingLightState = 
-                State.FirstOrDefault(e => e.EntityId == "light.retro_licht")?.State as string;
+            var ceilingLightState = State("light.retro_licht")?.State as string;
 
-            var illumination = 
-                (double) State.FirstOrDefault(e => e.EntityId == "sensor.hmip_smi_000915699a421a_illumination")?.State;
+            var illumination = (double) State("sensor.000915699a421a_illumination")?.State;
             
-
             if (ambientLightState == "on" || ceilingLightState == "on" || illumination > 15) 
             {
                 Log($"Skipped, because {illumination} > 15");
                 return;
             }
 
-            await Entity("light.retro_licht")
-                    .TurnOn()
-                    .WithAttribute("brightness", 127)
-                    .ExecuteAsync();
+            Entity("light.retro_licht").TurnOn(new { brightness = 127 });
+
             _lightEnabledByAutomation = true;
         }
     }

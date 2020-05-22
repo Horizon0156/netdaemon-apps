@@ -1,12 +1,9 @@
 namespace Horizon.SmartHome.Common.Homematic
 {
-    public partial class FluentHomematicSwitchEventManager
+    public enum KeyPressAction
     {
-        public enum KeyPressType
-        {
-            PRESS_SHORT,
+        PressShort,
 
-            PRESS_LONG
-        }
+        PressLong
     }
 }

@@ -1,13 +1,21 @@
 
-using JoySoftware.HomeAssistant.NetDaemon.Common;
+using System;
+using System.Reactive.Linq;
+using JoySoftware.HomeAssistant.NetDaemon.Common.Reactive;
 
 namespace Horizon.SmartHome.Common.Homematic
 {
-    public abstract class HomematicNetDaemonApp : NetDaemonApp
+    public abstract class HomematicNetDaemonRxApp : NetDaemonRxApp
     {
-        public IFluentHomematicSwitchEvent HomematicSwitchEvent(string entityId)
+        public IObservable<HomematicKeypressEvent> KeyPressEvents => MapKeypressEvents();
+
+        private IObservable<HomematicKeypressEvent> MapKeypressEvents()
         {
-            return new FluentHomematicSwitchEventManager(entityId, this, Logger);
+            return EventChanges.Where(@event => @event.Event == "homematic.keypress")
+                               .Select(@event => new HomematicKeypressEvent(
+                                   @event.Data?.name, 
+                                   (int) @event.Data?.channel, 
+                                   @event.Data?.param));
         }
     }
 }

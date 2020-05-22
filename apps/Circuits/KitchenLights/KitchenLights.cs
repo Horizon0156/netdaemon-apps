@@ -1,35 +1,28 @@
+using System;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Horizon.SmartHome.Common.Homematic;
-using JoySoftware.HomeAssistant.NetDaemon.Common;
 
 namespace Horizon.SmartHome.Circuits
 {
-    public class KitchenLights : HomematicNetDaemonApp
+    public class KitchenLights : HomematicNetDaemonRxApp
     {
         public override Task InitializeAsync()
         {
-            HomematicSwitchEvent("000858A99D84DE")
-                .Channel1()
-                .PressedShort()
-                .UseEntities("light.kuche")
-                .TurnOn()
-                .WithAttribute("brightness", 127)
-                .Execute();
+            KeyPressEvents.Where(e => e.Address == "000858A99D84DE" 
+                                   && e.Channel == 1 
+                                   && e.Action == KeyPressAction.PressShort)
+                          .Subscribe(_ => CallService("scene", "turn_on", new { entity_id = "scene.kuche_gedimmt"}));
+            
+            KeyPressEvents.Where(e => e.Address == "000858A99D84DE" 
+                                   && e.Channel == 1 
+                                   && e.Action == KeyPressAction.PressLong)
+                          .Subscribe(_ => CallService("scene", "turn_on", new { entity_id = "scene.kuche_hell"}));
 
-            HomematicSwitchEvent("000858A99D84DE")
-                .Channel1()
-                .PressedLong()
-                .UseEntities("light.kuche")
-                .TurnOn()
-                .WithAttribute("brightness", 255)
-                .Execute();
-
-            HomematicSwitchEvent("000858A99D84DE")
-                .Channel2()
-                .PressedShort()
-                .UseEntities("light.kuche")
-                .TurnOff()
-                .Execute();
+            KeyPressEvents.Where(e => e.Address == "000858A99D84DE" 
+                                   && e.Channel == 2
+                                   && e.Action == KeyPressAction.PressShort)
+                          .Subscribe(_ => Entities("light.tisch_1", "light.tisch_2").TurnOff());
 
             return base.InitializeAsync();
         }
